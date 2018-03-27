@@ -3,6 +3,7 @@ module.exports = {
   rules: {
     "jsx-a11y/anchor-is-valid": 0,
     "arrow-body-style": 1,
-    "no-unused-vars": 1
+    "no-unused-vars": 1,
+    "prefer-destructuring": 1
   }
 };

@@ -7,15 +7,18 @@ const { safeDump, FAILSAFE_SCHEMA } = require("js-yaml");
 
 const COPY_FOLDER = "copy";
 
-const langs = ["en", "fr", "es", "pt"];
-
-const langData = {
-  siteName: {
+const siteData = {
+  defaultLang: "en",
+  langs: ["en", "fr", "es", "pt"],
+  title: {
     en: "Game Workers Unite!",
     fr: "Travailleur·euse·s du jeu uni·e·s!",
     es: "Trabajadorxs de juegos unidxs!",
     pt: "Trabalhadorxs de jogos unidxs!"
-  },
+  }
+};
+
+const cmsLangData = {
   collection: {
     en: "Pages (English)",
     fr: "Pages (français)",
@@ -45,12 +48,18 @@ const subPages = [
 ];
 
 const routes = [
+  // The base route is in the default language.
   {
     path: "/",
-    component: "src/pages/Redirect"
+    component: "src/pages/Home",
+    getData: getCopy("home", siteData.defaultLang),
+    children: subPages.map(pageData => ({
+      ...pageData,
+      getData: getCopy(pageData.path, siteData.defaultLang)
+    }))
   },
-  // For each language defined, generate a base route, like '/en'...
-  ...langs.map(lang => ({
+  // For each other language defined, generate a base route, like '/fr'...
+  ...siteData.langs.filter(lang => lang !== siteData.defaultLang).map(lang => ({
     path: lang,
     // ...that maps to the homepage in that language...
     component: "src/pages/Home",
@@ -71,29 +80,19 @@ function getCopy(folderName, lang) {
   const filename = path.join(COPY_FOLDER, folderName, `${lang}.md`);
   if (!existsSync(filename)) {
     console.warn(`No file "${filename}"!`);
-    return () => ({});
+    return () => ({ title: "Not available", text: "No text" });
   }
   const data = matter.read(filename);
 
   return () => ({
-    title: data.title,
-    text: data.content,
-    lang
+    title: data.data.title,
+    text: data.content
   });
 }
 
 export default {
-  getSiteData: () => {
-    const res = {};
-    // For each language, pluck some properties into a new object that's also keyed on language.
-    langs.forEach(lang => {
-      res[lang] = {
-        title: langData.siteName[lang]
-      };
-    });
-    return { languageData: res };
-  },
-  getRoutes: async () => routes,
+  getSiteData: () => siteData,
+  getRoutes: () => routes,
   onBuild: async () => {
     console.log("Building CMS...");
 
@@ -163,9 +162,9 @@ function generateCMSConfig() {
     // Folder path where uploaded files will be accessed, relative to the base of the built site
     public_folder: "/uploads",
     // One collection of pages for each language...
-    collections: langs.map(lang => ({
+    collections: siteData.langs.map(lang => ({
       name: `pages-${lang}`,
-      label: langData.collection[lang],
+      label: cmsLangData.collection[lang],
       files: cmsPageList.map(({ name, path: filePath }) => ({
         file: path.join(COPY_FOLDER, filePath, `${lang}.md`),
         label: name,
@@ -173,12 +172,12 @@ function generateCMSConfig() {
         fields: [
           {
             name: "title",
-            label: langData.title[lang],
+            label: cmsLangData.title[lang],
             widget: "string"
           },
           {
             name: "body",
-            label: langData.text[lang],
+            label: cmsLangData.text[lang],
             widget: "markdown"
           }
         ]
