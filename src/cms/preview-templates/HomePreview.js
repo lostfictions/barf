@@ -4,7 +4,7 @@ import { Home } from "../../pages/Home";
 const HomePreview = ({ entry }) => (
   <Home
     title={entry.getIn(["data", "title"])}
-    text={entry.getIn(["data", "text"])}
+    text={entry.getIn(["data", "body"])}
   />
 );
 
