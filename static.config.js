@@ -91,7 +91,7 @@ export default {
         title: langData.siteName[lang]
       };
     });
-    return res;
+    return { languageData: res };
   },
   getRoutes: async () => routes,
   onBuild: async () => {

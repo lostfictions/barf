@@ -1,5 +1,5 @@
 import React from "react";
-import { Router, Link, Switch, Route } from "react-static";
+import { Router, Link, Switch, Route, Head } from "react-static";
 import { hot } from "react-hot-loader";
 import Routes from "react-static-routes";
 
@@ -7,22 +7,21 @@ import "./app.css";
 
 const App = () => (
   <Router>
-    <Switch>
-      <Route
-        render={() => (
-          <div>
-            <nav>
-              <Link to="/">Home</Link>
-              <Link to="/about">About</Link>
-              <Link to="/blog">Blog</Link>
-            </nav>
-            <div className="content">
-              <Routes />
-            </div>
-          </div>
-        )}
-      />
-    </Switch>
+    <div>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/why-unionize">Why Unionize?</Link>
+      </nav>
+      <nav>
+        <Link to="/en">EN</Link>
+        <Link to="/fr">FR</Link>
+      </nav>
+
+      <div className="content">
+        <Routes />
+      </div>
+    </div>
+    )} />
   </Router>
 );
 

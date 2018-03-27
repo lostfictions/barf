@@ -1,8 +1,17 @@
 import React from "react";
-import { withSiteData } from "react-static";
+import { withRouteData, Head } from "react-static";
 
-export default withSiteData(() => (
-  <div>
-    <h1 style={{ textAlign: "center" }}>Welcome to</h1>
-  </div>
-));
+import Markdown from "react-markdown";
+
+export const Home = ({ title, text }) => (
+  <React.Fragment>
+    <Head>
+      <title>{title}</title>
+    </Head>
+    <div className="content">
+      <Markdown source={text} escapeHtml={false} />
+    </div>
+  </React.Fragment>
+);
+
+export default withRouteData(Home);
