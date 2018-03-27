@@ -1,88 +1,99 @@
-const fs = require("fs");
-const klaw = require("klaw");
+const { readFileSync, existsSync, copyFileSync, writeFileSync } = require("fs");
 const path = require("path");
+
 const matter = require("gray-matter");
-
-console.log(require.resolve("webpack"));
 const webpack = require("webpack");
+const { safeDump, FAILSAFE_SCHEMA } = require("js-yaml");
 
-function getPosts() {
-  const items = [];
-  // Walk ("klaw") through posts directory and push file paths into items array //
-  const getFiles = () =>
-    new Promise(resolve => {
-      // Check if posts directory exists //
-      if (fs.existsSync("./src/posts")) {
-        klaw("./src/posts")
-          .on("data", item => {
-            // Filter function to retrieve .md files //
-            if (path.extname(item.path) === ".md") {
-              // If markdown file, read contents //
-              const data = fs.readFileSync(item.path, "utf8");
-              // Convert to frontmatter object and markdown content //
-              const dataObj = matter(data);
-              // Create slug for URL //
-              dataObj.data.slug = dataObj.data.title
-                .toLowerCase()
-                .replace(/ /g, "-")
-                .replace(/[^\w-]+/g, "");
-              // Remove unused key //
-              delete dataObj.orig;
-              // Push object into items array //
-              items.push(dataObj);
-            }
-          })
-          .on("error", e => {
-            console.log(e);
-          })
-          .on("end", () => {
-            // Resolve promise for async getRoutes request //
-            // posts = items for below routes //
-            resolve(items);
-          });
-      } else {
-        // If src/posts directory doesn't exist, return items as empty array //
-        resolve(items);
-      }
-    });
-  return getFiles();
+const COPY_FOLDER = "copy";
+
+const langs = ["en", "fr", "es", "pt"];
+
+const langData = {
+  siteName: {
+    en: "Game Workers Unite!",
+    fr: "Travailleur·euse·s du jeu uni·e·s!",
+    es: "Trabajadorxs de juegos unidxs!",
+    pt: "Trabalhadorxs de jogos unidxs!"
+  },
+  collection: {
+    en: "Pages (English)",
+    fr: "Pages (français)",
+    es: "Páginas (español)",
+    pt: "Páginas (português)"
+  },
+  title: {
+    en: "Title",
+    fr: "Titre",
+    es: "Título",
+    pt: "Título"
+  },
+  text: {
+    en: "Text",
+    fr: "Texte",
+    es: "Texto",
+    pt: "Texto"
+  }
+};
+
+const subPages = [
+  {
+    name: "Why Unionize?",
+    path: "why-unionize",
+    component: "src/pages/WhyUnionize"
+  }
+];
+
+const routes = [
+  {
+    path: "/",
+    component: "src/pages/Redirect"
+  },
+  // For each language defined, generate a base route, like '/en'...
+  ...langs.map(lang => ({
+    path: lang,
+    // ...that maps to the homepage in that language...
+    component: "src/pages/Home",
+    getData: getCopy("home", lang),
+    // ...and has child routes for the subpages in that language.
+    children: subPages.map(pageData => ({
+      ...pageData,
+      getData: getCopy(pageData.path, lang)
+    }))
+  })),
+  {
+    is404: true,
+    component: "src/pages/404"
+  }
+];
+
+function getCopy(folderName, lang) {
+  const filename = path.join(COPY_FOLDER, folderName, `${lang}.md`);
+  if (!existsSync(filename)) {
+    console.warn(`No file "${filename}"!`);
+    return () => ({});
+  }
+  const data = matter.read(filename);
+
+  return () => ({
+    title: data.title,
+    text: data.content,
+    lang
+  });
 }
 
 export default {
-  getSiteData: () => ({
-    title: "React Static??? with Netlify CMS???"
-  }),
-  getRoutes: async () => {
-    const posts = await getPosts();
-    return [
-      {
-        path: "/",
-        component: "src/containers/Home"
-      },
-      {
-        path: "/about",
-        component: "src/containers/About"
-      },
-      {
-        path: "/blog",
-        component: "src/containers/Blog",
-        getData: () => ({
-          posts
-        }),
-        children: posts.map(post => ({
-          path: `/post/${post.data.slug}`,
-          component: "src/containers/Post",
-          getData: () => ({
-            post
-          })
-        }))
-      },
-      {
-        is404: true,
-        component: "src/containers/404"
-      }
-    ];
+  getSiteData: () => {
+    const res = {};
+    // For each language, pluck some properties into a new object that's also keyed on language.
+    langs.forEach(lang => {
+      res[lang] = {
+        title: langData.siteName[lang]
+      };
+    });
+    return res;
   },
+  getRoutes: async () => routes,
   onBuild: async () => {
     console.log("Building CMS...");
 
@@ -104,16 +115,22 @@ export default {
           }
         }
 
-        fs.copyFileSync(
+        copyFileSync(
           require.resolve("netlify-cms/dist/cms.css"),
           path.join(__dirname, "dist/admin/cms.css")
         );
 
-        fs.copyFileSync(
-          path.join(__dirname, "src/cms/config.yml"),
-          path.join(__dirname, "dist/admin/config.yml")
+        writeFileSync(
+          path.join(__dirname, "dist/admin/config.yml"),
+          generateCMSConfig()
         );
-        fs.copyFileSync(
+
+        // copyFileSync(
+        //   path.join(__dirname, "src/cms/config.yml"),
+        //   path.join(__dirname, "dist/admin/config.yml")
+        // );
+
+        copyFileSync(
           path.join(__dirname, "src/cms/index.html"),
           path.join(__dirname, "dist/admin/index.html")
         );
@@ -124,3 +141,50 @@ export default {
     console.log("Done building CMS.");
   }
 };
+
+function generateCMSConfig() {
+  // The list of Pages for the CMS is just the subpages, plus the home page
+  // (which is a special case.)
+  const cmsPageList = [
+    {
+      name: "Home",
+      path: "home" // the path on disk to the copy is different for Home!
+    },
+    ...subPages
+  ];
+
+  const cmsConfig = {
+    backend: {
+      name: "github",
+      repo: "lostfictions/barf"
+    },
+    // Media files will be stored in the repo under public/uploads.
+    media_folder: "public/uploads",
+    // Folder path where uploaded files will be accessed, relative to the base of the built site
+    public_folder: "/uploads",
+    // One collection of pages for each language...
+    collections: langs.map(lang => ({
+      name: `pages-${lang}`,
+      label: langData.collection[lang],
+      files: cmsPageList.map(({ name, path: filePath }) => ({
+        file: path.join(COPY_FOLDER, filePath, `${lang}.md`),
+        label: name,
+        name: filePath,
+        fields: [
+          {
+            name: "title",
+            label: langData.title[lang],
+            widget: "string"
+          },
+          {
+            name: "text",
+            label: langData.text[lang],
+            widget: "markdown"
+          }
+        ]
+      }))
+    }))
+  };
+
+  return safeDump(cmsConfig, { schema: FAILSAFE_SCHEMA });
+}

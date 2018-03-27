@@ -16,6 +16,7 @@
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-hot-loader": "^4.0.0",
+    "react-intl": "^2.4.0",
     "react-markdown": "^3.1.0",
     "react-moment": "^0.7.0",
     "react-router": "^4.2.0"
@@ -26,7 +27,7 @@
     "eslint-config-prettier": "^2.9.0",
     "eslint-config-react-tools": "1.x.x",
     "gray-matter": "^3.1.1",
-    "klaw": "^2.1.1",
+    "js-yaml": "^3.11.0",
     "react-static": "^5.1.10",
     "serve": "^6.1.0",
     "webpack": "^4.2.0"
