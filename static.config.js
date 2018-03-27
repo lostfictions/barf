@@ -19,11 +19,11 @@ const siteData = {
 };
 
 const cmsLangData = {
-  collection: {
-    en: "Pages (English)",
-    fr: "Pages (français)",
-    es: "Páginas (español)",
-    pt: "Páginas (português)"
+  language: {
+    en: "English",
+    fr: "Français",
+    es: "Español",
+    pt: "Português"
   },
   title: {
     en: "Title",
@@ -161,14 +161,13 @@ function generateCMSConfig() {
     media_folder: "public/uploads",
     // Folder path where uploaded files will be accessed, relative to the base of the built site
     public_folder: "/uploads",
-    // One collection of pages for each language...
-    collections: siteData.langs.map(lang => ({
-      name: `pages-${lang}`,
-      label: cmsLangData.collection[lang],
-      files: cmsPageList.map(({ name, path: filePath }) => ({
+    collections: cmsPageList.map(({ name, path: filePath }) => ({
+      name: filePath,
+      label: name,
+      files: siteData.langs.map(lang => ({
         file: path.join(COPY_FOLDER, filePath, `${lang}.md`),
-        label: name,
-        name: filePath,
+        label: cmsLangData.language[lang],
+        name: `${filePath}-${lang}`,
         fields: [
           {
             name: "title",
@@ -183,6 +182,28 @@ function generateCMSConfig() {
         ]
       }))
     }))
+    // // One collection of pages for each language...
+    // collections: siteData.langs.map(lang => ({
+    //   name: `pages-${lang}`,
+    //   label: cmsLangData.collection[lang],
+    //   files: cmsPageList.map(({ name, path: filePath }) => ({
+    //     file: path.join(COPY_FOLDER, filePath, `${lang}.md`),
+    //     label: name,
+    //     name: filePath,
+    //     fields: [
+    //       {
+    //         name: "title",
+    //         label: cmsLangData.title[lang],
+    //         widget: "string"
+    //       },
+    //       {
+    //         name: "body",
+    //         label: cmsLangData.text[lang],
+    //         widget: "markdown"
+    //       }
+    //     ]
+    //   }))
+    // }))
   };
 
   return safeDump(cmsConfig, { schema: FAILSAFE_SCHEMA });

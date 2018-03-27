@@ -26,8 +26,10 @@
     "eslint": "^4.19.1",
     "eslint-config-prettier": "^2.9.0",
     "eslint-config-react-tools": "1.x.x",
+    "file-loader": "^1.1.11",
     "gray-matter": "^3.1.1",
     "js-yaml": "^3.11.0",
+    "mini-css-extract-plugin": "^0.2.0",
     "react-static": "^5.1.10",
     "serve": "^6.1.0",
     "webpack": "^4.2.0"
