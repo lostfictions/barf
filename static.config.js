@@ -1,4 +1,4 @@
-const { readFileSync, existsSync, copyFileSync, writeFileSync } = require("fs");
+const { existsSync, copyFileSync, writeFileSync } = require("fs");
 const path = require("path");
 
 const matter = require("gray-matter");
