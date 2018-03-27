@@ -177,7 +177,7 @@ function generateCMSConfig() {
             widget: "string"
           },
           {
-            name: "text",
+            name: "body",
             label: langData.text[lang],
             widget: "markdown"
           }
